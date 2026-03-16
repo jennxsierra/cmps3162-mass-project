@@ -1,4 +1,4 @@
-module github.com/jennxsierra/rate-limiting-shutdown
+module github.com/jennxsierra/mass-project
 
 go 1.25.6
 

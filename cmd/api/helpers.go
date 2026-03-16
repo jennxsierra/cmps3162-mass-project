@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jennxsierra/rate-limiting-shutdown/internal/validator"
+	"github.com/jennxsierra/mass-project/internal/validator"
 )
 
 // create an envelope type

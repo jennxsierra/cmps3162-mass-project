@@ -3,7 +3,7 @@ package data
 import (
 	"strings"
 
-	"github.com/jennxsierra/rate-limiting-shutdown/internal/validator"
+	"github.com/jennxsierra/mass-project/internal/validator"
 )
 
 // The Filters type will contain the fields related to pagination

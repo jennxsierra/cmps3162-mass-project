@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jennxsierra/rate-limiting-shutdown/internal/data"
+	"github.com/jennxsierra/mass-project/internal/data"
 	_ "github.com/lib/pq"
 )
 
