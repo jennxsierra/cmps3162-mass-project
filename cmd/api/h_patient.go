@@ -6,15 +6,19 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jennxsierra/rate-limiting-shutdown/internal/data"
-	"github.com/jennxsierra/rate-limiting-shutdown/internal/validator"
+	"github.com/jennxsierra/mass-project/internal/data"
+	"github.com/jennxsierra/mass-project/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
 // Helper to extract :patient_no param
-func (a *applicationDependencies) readPatientNoParam(r *http.Request) string {
+func (a *applicationDependencies) readPatientNoParam(r *http.Request) (string, error) {
 	params := httprouter.ParamsFromContext(r.Context())
-	return params.ByName("patient_no")
+	patientNo := params.ByName("patient_no")
+	if patientNo == "" {
+		return "", errors.New("invalid patient_no")
+	}
+	return patientNo, nil
 }
 
 // POST /v1/patients -- create new patient
@@ -65,13 +69,17 @@ func (a *applicationDependencies) createPatientHandler(w http.ResponseWriter, r 
 	}
 }
 
-// GET /v1/patients/:patient_no -- show patient by number
+// GET /v1/patients/:patient_no -- show patient by patient_no
 func (a *applicationDependencies) showPatientHandler(w http.ResponseWriter, r *http.Request) {
-	patientNo := a.readPatientNoParam(r)
+	patientNo, err := a.readPatientNoParam(r)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
 
 	patient, err := a.models.Patient.Get(patientNo)
 	if err != nil {
-		if errors.Is(err, errors.New("record not found")) {
+		if err == data.ErrRecordNotFound {
 			a.notFoundResponse(w, r)
 		} else {
 			a.serverErrorResponse(w, r, err)
@@ -149,11 +157,15 @@ func (a *applicationDependencies) listPatientsHandler(w http.ResponseWriter, r *
 
 // PUT/PATCH /v1/patients/:patient_no -- update (full or partial)
 func (a *applicationDependencies) updatePatientHandler(w http.ResponseWriter, r *http.Request) {
-	patientNo := a.readPatientNoParam(r)
+	patientNo, err := a.readPatientNoParam(r)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
 
 	patient, err := a.models.Patient.Get(patientNo)
 	if err != nil {
-		if errors.Is(err, errors.New("record not found")) {
+		if err == data.ErrRecordNotFound {
 			a.notFoundResponse(w, r)
 		} else {
 			a.serverErrorResponse(w, r, err)
@@ -201,7 +213,7 @@ func (a *applicationDependencies) updatePatientHandler(w http.ResponseWriter, r 
 
 	err = a.models.Patient.Update(patient)
 	if err != nil {
-		if errors.Is(err, errors.New("record not found")) {
+		if err == data.ErrRecordNotFound {
 			a.notFoundResponse(w, r)
 		} else {
 			a.serverErrorResponse(w, r, err)
@@ -217,17 +229,28 @@ func (a *applicationDependencies) updatePatientHandler(w http.ResponseWriter, r 
 
 // DELETE /v1/patients/:patient_no
 func (a *applicationDependencies) deletePatientHandler(w http.ResponseWriter, r *http.Request) {
-	patientNo := a.readPatientNoParam(r)
-	err := a.models.Patient.Delete(patientNo)
+	patientNo, err := a.readPatientNoParam(r)
 	if err != nil {
-		if errors.Is(err, errors.New("record not found")) {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = a.models.Patient.Delete(patientNo)
+	if err != nil {
+		switch err {
+		case data.ErrRecordNotFound:
 			a.notFoundResponse(w, r)
-		} else {
+		case data.ErrPatientInUse:
+			a.errorResponseJSON(w, r, http.StatusUnprocessableEntity, "patient has related appointments and cannot be deleted")
+		default:
 			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
-	a.writeJSON(w, http.StatusOK, envelope{"message": "patient successfully deleted"}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"message": "patient successfully deleted"}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
 }
 
 // GET /v1/slow -- simulates slow database query for graceful shutdown demo

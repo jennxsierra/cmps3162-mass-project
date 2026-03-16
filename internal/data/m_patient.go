@@ -7,8 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jennxsierra/rate-limiting-shutdown/internal/validator"
+	"github.com/jennxsierra/mass-project/internal/validator"
+	"github.com/lib/pq"
 )
+
+var ErrRecordNotFound = errors.New("record not found")
+var ErrPatientInUse = errors.New("patient has related records and cannot be deleted")
 
 type Patient struct {
 	PatientID   int64     `json:"patient_id"`
@@ -26,6 +30,11 @@ func ValidatePatient(v *validator.Validator, p *Patient) {
 	v.Check(p.FirstName != "", "first_name", "First name must be provided")
 	v.Check(p.LastName != "", "last_name", "Last name must be provided")
 	v.Check(p.SSN != "", "ssn", "SSN must be provided")
+	v.Check(p.DateOfBirth != "", "date_of_birth", "Date of birth must be provided")
+	if p.DateOfBirth != "" {
+		_, err := time.Parse("2006-01-02", p.DateOfBirth)
+		v.Check(err == nil, "date_of_birth", "Date of birth must be a valid date (YYYY-MM-DD)")
+	}
 }
 
 type PatientModel struct {
@@ -75,7 +84,7 @@ func (m PatientModel) Get(patientNo string) (*Patient, error) {
 		&p.FirstName, &p.LastName, &p.DateOfBirth, &p.Gender, &p.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("record not found")
+			return nil, ErrRecordNotFound
 		}
 		return nil, err
 	}
@@ -162,7 +171,7 @@ func (m PatientModel) Update(p *Patient) error {
 		return err
 	}
 	if rows == 0 {
-		return errors.New("record not found")
+		return ErrRecordNotFound
 	}
 	return nil
 }
@@ -172,19 +181,15 @@ func (m PatientModel) Delete(patientNo string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// Find person_id to delete
-	var personID int64
-	err := m.DB.QueryRowContext(ctx, "SELECT patient_id FROM patient WHERE patient_no=$1", patientNo).Scan(&personID)
+	// Delete from person using patient_no lookup; cascades to patient
+	result, err := m.DB.ExecContext(ctx,
+		"DELETE FROM person WHERE person_id = (SELECT patient_id FROM patient WHERE patient_no = $1)",
+		patientNo)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("record not found")
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23503" {
+			return ErrPatientInUse
 		}
-		return err
-	}
-
-	// Delete from person, which cascades to patient
-	result, err := m.DB.ExecContext(ctx, "DELETE FROM person WHERE person_id=$1", personID)
-	if err != nil {
 		return err
 	}
 	rows, err := result.RowsAffected()
@@ -192,7 +197,7 @@ func (m PatientModel) Delete(patientNo string) error {
 		return err
 	}
 	if rows == 0 {
-		return errors.New("record not found")
+		return ErrRecordNotFound
 	}
 	return nil
 }

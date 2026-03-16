@@ -31,6 +31,22 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/patients/:patient_no", a.updatePatientHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/patients/:patient_no", a.deletePatientHandler)
 
+	// Provider routes
+	router.HandlerFunc(http.MethodGet, "/v1/providers", a.listProvidersHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/providers", a.createProviderHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/providers/:license_no", a.showProviderHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/providers/:license_no", a.updateProviderHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/providers/:license_no", a.updateProviderHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/providers/:license_no", a.deleteProviderHandler)
+
+	// Staff routes
+	router.HandlerFunc(http.MethodGet, "/v1/staff", a.listStaffHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/staff", a.createStaffHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/staff/:staff_no", a.showStaffHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/staff/:staff_no", a.updateStaffHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/staff/:staff_no", a.updateStaffHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/staff/:staff_no", a.deleteStaffHandler)
+
 	// Request sent first to recoverPanic() then sent to loggingMiddleware()
 	// then sent to rateLimit() and finally sent to the router
 	return a.recoverPanic(a.loggingMiddleware(a.rateLimit(router)))
