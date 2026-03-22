@@ -47,6 +47,12 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/staff/:staff_no", a.updateStaffHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/staff/:staff_no", a.deleteStaffHandler)
 
+	// Appointment Type routes
+	router.HandlerFunc(http.MethodGet, "/v1/appointment-types", a.listAppointmentTypesHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/appointment-types", a.createAppointmentTypeHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/appointment-types/:id", a.showAppointmentTypeHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/appointment-types/:id", a.updateAppointmentTypeHandler)
+
 	// Request sent first to recoverPanic() then sent to loggingMiddleware()
 	// then sent to rateLimit() and finally sent to the router
 	return a.recoverPanic(a.loggingMiddleware(a.rateLimit(router)))

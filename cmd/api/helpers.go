@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/jennxsierra/mass-project/internal/validator"
+	"github.com/julienschmidt/httprouter"
 )
 
 // create an envelope type
@@ -161,4 +162,17 @@ func (a *applicationDependencies) getSingleIntegerParameter(
 	}
 
 	return intValue
+}
+
+// readIntIDParam retrieves an integer ID parameter from the URL path
+func (a *applicationDependencies) readIntIDParam(r *http.Request, paramName string) (int, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	idString := params.ByName(paramName)
+
+	id, err := strconv.Atoi(idString)
+	if err != nil || id < 1 {
+		return 0, errors.New("invalid id parameter")
+	}
+
+	return id, nil
 }
