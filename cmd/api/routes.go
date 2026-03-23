@@ -53,6 +53,12 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/appointment-types/:id", a.showAppointmentTypeHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/appointment-types/:id", a.updateAppointmentTypeHandler)
 
+	// Specialties routes
+	router.HandlerFunc(http.MethodGet, "/v1/specialties", a.listSpecialtiesHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/specialties", a.createSpecialtyHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/specialties/:id", a.showSpecialtyHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/specialties/:id", a.updateSpecialtyHandler)
+
 	// Request sent first to recoverPanic() then sent to loggingMiddleware()
 	// then sent to rateLimit() and finally sent to the router
 	return a.recoverPanic(a.loggingMiddleware(a.rateLimit(router)))

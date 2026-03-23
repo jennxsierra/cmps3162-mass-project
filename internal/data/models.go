@@ -10,6 +10,7 @@ type Models struct {
 	Provider        ProviderModel
 	Staff           StaffModel
 	AppointmentType AppointmentTypeModel
+	Specialty       SpecialtyModel
 }
 
 // NewModels builds the Models struct with initialized model handlers
@@ -19,5 +20,6 @@ func NewModels(db *sql.DB) Models {
 		Provider:        ProviderModel{DB: db},
 		Staff:           StaffModel{DB: db},
 		AppointmentType: AppointmentTypeModel{DB: db},
+		Specialty:       SpecialtyModel{DB: db},
 	}
 }
