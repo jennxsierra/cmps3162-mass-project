@@ -42,6 +42,28 @@ run/cors-basic:
 run/cors-preflight:
 	go run ./cmd/examples/cors/preflight
 
+## test/gzip/uncompressed: Show uncompressed response headers and size
+## Transfer-Encoding: set to chunk when size is unknown
+.PHONY: test/gzip/uncompressed
+test/gzip/uncompressed:
+	@echo "=== UNCOMPRESSED RESPONSE ==="
+	curl --silent --dump-header - --output /dev/null http://localhost:4000/v1/metrics
+	@printf "Size (bytes): %s\n" "$$(curl --silent http://localhost:4000/v1/metrics | wc -c)"
+
+## test/gzip/compressed: Show gzip compressed response headers and size
+## Output is buffered so Content-Length can be sent
+.PHONY: test/gzip/compressed
+test/gzip/compressed:
+	@echo "=== GZIP COMPRESSED RESPONSE ==="
+	curl --silent --dump-header - --output /dev/null -H "Accept-Encoding: gzip" http://localhost:4000/v1/metrics
+	@printf "Size (bytes): %s\n" "$$(curl --silent -H "Accept-Encoding: gzip" http://localhost:4000/v1/metrics | wc -c)"
+
+## test/gzip/compare: Compare uncompressed vs gzip compressed sizes
+.PHONY: test/gzip/compare
+test/gzip/compare: test/gzip/uncompressed test/gzip/compressed
+	@echo ""
+	@printf "Compression Ratio: %.1f%%\n" "$$(( (1 - $$(curl --silent -H 'Accept-Encoding: gzip' http://localhost:4000/v1/metrics | wc -c) / $$(curl --silent http://localhost:4000/v1/metrics | wc -c)) * 100 ))"
+
 # ==================================================================================== #
 # DATABASE
 # ==================================================================================== #

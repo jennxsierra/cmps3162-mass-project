@@ -1,11 +1,13 @@
 package main
 
 import (
+	"compress/gzip"
 	"expvar"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -226,5 +228,67 @@ func (a *applicationDependencies) loggingMiddleware(next http.Handler) http.Hand
 			"path", r.URL.Path,
 			"duration", fmt.Sprintf("%.2fms", float64(duration.Microseconds())/1000.0),
 		)
+	})
+}
+
+// gzipResponseWriter wraps an http.ResponseWriter to compress output with gzip
+type gzipResponseWriter struct {
+	wrapped       http.ResponseWriter
+	gzipWriter    *gzip.Writer
+	headerWritten bool
+}
+
+// newGzipResponseWriter creates a new gzipResponseWriter
+func newGzipResponseWriter(w http.ResponseWriter) *gzipResponseWriter {
+	gzipWriter := gzip.NewWriter(w)
+	return &gzipResponseWriter{
+		wrapped:    w,
+		gzipWriter: gzipWriter,
+	}
+}
+
+// Header returns the header map
+func (w *gzipResponseWriter) Header() http.Header {
+	return w.wrapped.Header()
+}
+
+// WriteHeader writes the status code and sets Content-Encoding: gzip
+func (w *gzipResponseWriter) WriteHeader(statusCode int) {
+	if w.headerWritten {
+		return
+	}
+	w.wrapped.Header().Set("Content-Encoding", "gzip")
+	w.wrapped.Header().Del("Content-Length")
+	w.wrapped.WriteHeader(statusCode)
+	w.headerWritten = true
+}
+
+// Write compresses the data using gzip
+func (w *gzipResponseWriter) Write(b []byte) (int, error) {
+	if !w.headerWritten {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.gzipWriter.Write(b)
+}
+
+// flush flushes the gzip writer to ensure all data is written
+func (w *gzipResponseWriter) flush() error {
+	return w.gzipWriter.Close()
+}
+
+// gzip middleware compresses response bodies with gzip when the client supports it
+func (a *applicationDependencies) gzip(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// check if the client accepts gzip encoding
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// wrap the response writer with gzip compression
+		gzipWriter := newGzipResponseWriter(w)
+		defer gzipWriter.flush()
+
+		next.ServeHTTP(gzipWriter, r)
 	})
 }
