@@ -72,16 +72,9 @@ func main() {
 	// parse the command-line flags
 	flag.Parse()
 
-	// initialize logger with custom handler for readable time format
-	logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	// initialize structured logger in JSON format
+	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Replace the default timestamp with a more readable format
-			if a.Key == slog.TimeKey {
-				return slog.String("time", time.Now().Format("2006-01-02 15:04:05"))
-			}
-			return a
-		},
 	})
 	logger := slog.New(logHandler)
 

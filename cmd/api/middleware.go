@@ -229,12 +229,15 @@ func (a *applicationDependencies) rateLimit(next http.Handler) http.Handler {
 func (a *applicationDependencies) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
-		duration := time.Since(start)
+		mw := newMetricsResponseWriter(w)
+		next.ServeHTTP(mw, r)
+		durationMs := float64(time.Since(start).Microseconds()) / 1000.0
 		a.logger.Info("request received",
 			"method", r.Method,
 			"path", r.URL.Path,
-			"duration", fmt.Sprintf("%.2fms", float64(duration.Microseconds())/1000.0),
+			"remote_addr", r.RemoteAddr,
+			"status", mw.statusCode,
+			"duration_ms", durationMs,
 		)
 	})
 }
