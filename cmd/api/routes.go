@@ -38,6 +38,9 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/providers/:license_no", a.updateProviderHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/providers/:license_no", a.updateProviderHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/providers/:license_no", a.deleteProviderHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/providers/:license_no/specialties", a.createProviderSpecialtyHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/providers/:license_no/specialties", a.listProviderSpecialtiesHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/providers/:license_no/specialties/:specialty_id", a.deleteProviderSpecialtyHandler)
 
 	// Staff routes
 	router.HandlerFunc(http.MethodGet, "/v1/staff", a.listStaffHandler)
