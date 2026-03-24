@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -81,25 +80,42 @@ func getOrCreateExpvarMap(name string) *expvar.Map {
 	return expvar.NewMap(name)
 }
 
-// tracks the total number of requests received, total responses sent,
-// total processing time, and total responses sent by status code
+// tracks key request metrics:
+// - total requests
+// - requests per route
+// - total error responses
+// - average latency in milliseconds
 func (a *applicationDependencies) metrics(next http.Handler) http.Handler {
-	totalRequestsReceived := getOrCreateExpvarInt("total_requests_received")
-	totalResponsesSent := getOrCreateExpvarInt("total_responses_sent")
-	totalProcessingTimeMicroseconds := getOrCreateExpvarInt("total_processing_time_μs")
-	totalResponsesSentByStatus := getOrCreateExpvarMap("total_responses_sent_by_status")
+	totalRequests := getOrCreateExpvarInt("total_requests")
+	requestsPerRoute := getOrCreateExpvarMap("requests_per_route")
+	totalErrorCount := getOrCreateExpvarInt("total_error_count")
+	totalLatencyMicroseconds := getOrCreateExpvarInt("total_latency_microseconds")
+
+	if expvar.Get("average_latency_ms") == nil {
+		expvar.Publish("average_latency_ms", expvar.Func(func() any {
+			requests := totalRequests.Value()
+			if requests == 0 {
+				return float64(0)
+			}
+
+			latencyMs := float64(totalLatencyMicroseconds.Value()) / 1000.0
+			return latencyMs / float64(requests)
+		}))
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		totalRequestsReceived.Add(1)
+		totalRequests.Add(1)
+		requestsPerRoute.Add(r.URL.Path, 1)
 
 		mw := newMetricsResponseWriter(w)
 		next.ServeHTTP(mw, r)
 
-		totalResponsesSent.Add(1)
-		processingTimeMicroseconds := time.Since(start).Microseconds()
-		totalProcessingTimeMicroseconds.Add(processingTimeMicroseconds)
-		totalResponsesSentByStatus.Add(strconv.Itoa(mw.statusCode), 1)
+		if mw.statusCode >= http.StatusBadRequest {
+			totalErrorCount.Add(1)
+		}
+
+		totalLatencyMicroseconds.Add(time.Since(start).Microseconds())
 	})
 }
 

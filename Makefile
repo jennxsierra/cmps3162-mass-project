@@ -87,6 +87,16 @@ test/rate-limit:
 		echo ""; \
 	done
 
+## test/metrics/core: Exercise requests and print core metrics values
+.PHONY: test/metrics/core
+test/metrics/core:
+	@echo "Generating sample traffic for metrics..."
+	@curl --silent --output /dev/null http://localhost:4000/v1/healthcheck
+	@curl --silent --output /dev/null http://localhost:4000/v1/healthcheck
+	@curl --silent --output /dev/null http://localhost:4000/v1/not-a-route
+	@echo "=== CORE METRICS ==="
+	@curl --silent http://localhost:4000/v1/metrics | grep -E '"total_requests"|"requests_per_route"|"total_error_count"|"average_latency_ms"'
+
 # ==================================================================================== #
 # DATABASE
 # ==================================================================================== #
