@@ -8,12 +8,17 @@ include .envrc
 ## run/api: Start the API server
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -db-dsn='$(MEDICAL_DB_DSN)'
+	go run ./cmd/api \
+		-db-dsn='$(MEDICAL_DB_DSN)' \
+		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 
 ## run/api-no-limit: Start the API server without rate limiting
 .PHONY: run/api-no-limit
 run/api-no-limit:
-	go run ./cmd/api -db-dsn='$(MEDICAL_DB_DSN)' -limiter-enabled=false
+	go run ./cmd/api \
+		-db-dsn='$(MEDICAL_DB_DSN)' \
+		-limiter-enabled=false \
+		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 
 # ==================================================================================== #
 # DEMO
@@ -26,6 +31,16 @@ demo/shutdown-request:
 	@curl -i http://localhost:4000/v1/slow
 	@echo ""
 	@echo "Request completed successfully!"
+
+## run/cors-basic: Run the basic CORS demo
+.PHONY: run/cors-basic
+run/cors-basic:
+	go run ./cmd/examples/cors/basic
+
+## run/cors-preflight: Run the preflight CORS demo
+.PHONY: run/cors-preflight
+run/cors-preflight:
+	go run ./cmd/examples/cors/preflight
 
 # ==================================================================================== #
 # DATABASE

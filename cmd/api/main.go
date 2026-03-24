@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/jennxsierra/mass-project/internal/data"
@@ -27,6 +28,9 @@ type serverConfig struct {
 		burst   int     // initial requests possible
 		enabled bool    // enable or disable rate limiter
 	}
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 type applicationDependencies struct {
@@ -38,24 +42,27 @@ type applicationDependencies struct {
 func main() {
 	var settings serverConfig
 
+	// Server Flags
 	flag.IntVar(&settings.port, "port", 4000, "Server port")
-
-	// read in the environment (development|staging|production)
 	flag.StringVar(&settings.environment, "env", "development",
 		"Environment(development|staging|production)")
 
-	// read in the dsn
+	// Database Flags
 	flag.StringVar(&settings.db.dsn, "db-dsn", "", "PostgreSQL DSN")
 
-	// read in the rate limiter settings
+	// Rate Limiter Flags
 	flag.Float64Var(&settings.limiter.rps, "limiter-rps", 2,
 		"Rate Limiter maximum requests per second")
-
 	flag.IntVar(&settings.limiter.burst, "limiter-burst", 5,
 		"Rate Limiter maximum burst")
-
 	flag.BoolVar(&settings.limiter.enabled, "limiter-enabled", true,
 		"Enable rate limiter")
+
+	// CORS Trusted Origins Flags
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
+		settings.cors.trustedOrigins = strings.Fields(val)
+		return nil
+	})
 
 	// parse the command-line flags
 	flag.Parse()

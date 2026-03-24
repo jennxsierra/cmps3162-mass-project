@@ -101,6 +101,42 @@ func (a *applicationDependencies) metrics(next http.Handler) http.Handler {
 	})
 }
 
+func (a *applicationDependencies) enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// indicates that responses may vary based on headers
+		w.Header().Add("Vary", "Origin")
+		w.Header().Add("Vary", "Access-Control-Request-Method")
+
+		// get the value of the Origin header from the incoming request
+		origin := r.Header.Get("Origin")
+
+		if origin != "" {
+			// check if the origin is in the trusted origins list
+			for i := range a.config.cors.trustedOrigins {
+				if origin == a.config.cors.trustedOrigins[i] {
+					// allowing cross-origin requests for trusted origins
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+
+					// handle CORS preflight requests
+					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+						// indicate allowed methods and headers for preflight requests
+						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
+						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+						// respond to preflight requests with 200 OK and return early
+						w.WriteHeader(http.StatusOK)
+						return
+					}
+
+					break
+				}
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // recovers from any panics and sends a 500 Internal Server Error response
 func (a *applicationDependencies) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
