@@ -204,10 +204,18 @@ func (a *applicationDependencies) rateLimit(next http.Handler) http.Handler {
 			// Update the last seen for the client
 			clients[ip].lastSeen = time.Now()
 
-			// Check the rate limit status
-			if !clients[ip].limiter.Allow() {
+			reservation := clients[ip].limiter.Reserve()
+			if !reservation.OK() {
 				mu.Unlock() // no longer need exclusive access to the map
-				a.rateLimitExceededResponse(w, r)
+				a.rateLimitExceededResponse(w, r, time.Second)
+				return
+			}
+
+			delay := reservation.Delay()
+			if delay > 0 {
+				reservation.Cancel()
+				mu.Unlock() // no longer need exclusive access to the map
+				a.rateLimitExceededResponse(w, r, delay)
 				return
 			}
 

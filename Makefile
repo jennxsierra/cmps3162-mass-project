@@ -10,6 +10,10 @@ include .envrc
 run/api:
 	go run ./cmd/api \
 		-db-dsn='$(MEDICAL_DB_DSN)' \
+		-port=${PORT} \
+		-limiter-rps=${RATE_LIMITER_RPS} \
+		-limiter-burst=${RATE_LIMITER_BURST} \
+		-limiter-enabled=${RATE_LIMITER_ENABLED} \
 		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 
 ## run/api-no-limit: Start the API server without rate limiting
@@ -17,6 +21,7 @@ run/api:
 run/api-no-limit:
 	go run ./cmd/api \
 		-db-dsn='$(MEDICAL_DB_DSN)' \
+		-port=${PORT} \
 		-limiter-enabled=false \
 		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 
@@ -63,6 +68,22 @@ test/gzip/compressed:
 test/gzip/compare: test/gzip/uncompressed test/gzip/compressed
 	@echo ""
 	@printf "Compression Ratio: %.1f%%\n" "$$(( (1 - $$(curl --silent -H 'Accept-Encoding: gzip' http://localhost:4000/v1/metrics | wc -c) / $$(curl --silent http://localhost:4000/v1/metrics | wc -c)) * 100 ))"
+
+## test/rate-limit-server: Server configuration for rate limit testing
+.PHONY: test/rate-limit-server
+test/rate-limit-server:
+	go run ./cmd/api -db-dsn='$(MEDICAL_DB_DSN)' -limiter-rps=0.1 -limiter-burst=2 -limiter-enabled=true
+
+## test/rate-limit: Trigger rate limit
+.PHONY: test/rate-limit
+test/rate-limit:
+	@echo "[Testing Rate Limiter]"
+	@for i in {1..15}; do \
+		echo "[Request #$$i]"; \
+		curl -i http://localhost:4000/v1/healthcheck; \
+		sleep 1; \
+		echo ""; \
+	done
 
 # ==================================================================================== #
 # DATABASE

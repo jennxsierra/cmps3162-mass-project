@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 // log an error message
@@ -71,9 +74,20 @@ func (a *applicationDependencies) badRequestResponse(w http.ResponseWriter,
 }
 
 // send an error response if rate limit exceeded (429 - Too Many Requests)
-func (a *applicationDependencies) rateLimitExceededResponse(w http.ResponseWriter,
-	r *http.Request) {
+func (a *applicationDependencies) rateLimitExceededResponse(
+	w http.ResponseWriter,
+	r *http.Request,
+	retry time.Duration,
+) {
+	if retry <= 0 {
+		retry = time.Second
+	}
 
-	message := "rate limit exceeded"
-	a.errorResponseJSON(w, r, http.StatusTooManyRequests, message)
+	seconds := int(math.Ceil(retry.Seconds()))
+	if seconds < 1 {
+		seconds = 1
+	}
+
+	w.Header().Set("Retry-After", strconv.Itoa(seconds))
+	a.errorResponseJSON(w, r, http.StatusTooManyRequests, "rate limit exceeded")
 }
