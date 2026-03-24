@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"log/slog"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/jennxsierra/mass-project/internal/data"
@@ -81,6 +83,33 @@ func main() {
 	defer db.Close()
 
 	logger.Info("database connection pool established")
+
+	// publish application metrics using expvar
+	expvar.NewString("version").Set(appVersion)
+
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+
+	expvar.Publish("database", expvar.Func(func() any {
+		stats := db.Stats()
+		return map[string]any{
+			"open_connections":     stats.OpenConnections,
+			"in_use":               stats.InUse,
+			"idle":                 stats.Idle,
+			"wait_count":           stats.WaitCount,
+			"wait_duration":        stats.WaitDuration.String(),
+			"max_idle_closed":      stats.MaxIdleClosed,
+			"max_idle_time_closed": stats.MaxIdleTimeClosed,
+			"max_lifetime_closed":  stats.MaxLifetimeClosed,
+		}
+	}))
+
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
+
+	// create an instance of our application struct containing the dependencies
 	appInstance := &applicationDependencies{
 		config: settings,
 		logger: logger,

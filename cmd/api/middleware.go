@@ -1,14 +1,105 @@
 package main
 
 import (
+	"expvar"
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
 )
+
+// captures the status code for metrics purposes
+type metricsResponseWriter struct {
+	wrapped       http.ResponseWriter
+	statusCode    int
+	headerWritten bool
+}
+
+// creates a new instance of metricsResponseWriter
+func newMetricsResponseWriter(w http.ResponseWriter) *metricsResponseWriter {
+	return &metricsResponseWriter{
+		wrapped:    w,
+		statusCode: http.StatusOK,
+	}
+}
+
+// implement the http.ResponseWriter interface for metricsResponseWriter
+func (w *metricsResponseWriter) Header() http.Header {
+	return w.wrapped.Header()
+}
+
+// capture the status code and mark that the header has been written
+func (w *metricsResponseWriter) WriteHeader(statusCode int) {
+	if w.headerWritten {
+		return
+	}
+	w.statusCode = statusCode
+	w.headerWritten = true
+	w.wrapped.WriteHeader(statusCode)
+}
+
+// sets the status code to 200 OK
+// if Write() is called without WriteHeader() being called first
+func (w *metricsResponseWriter) Write(b []byte) (int, error) {
+	if !w.headerWritten {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.wrapped.Write(b)
+}
+
+// allows access to the underlying http.ResponseWriter
+// for compatibility with http.HandlerFunc
+func (w *metricsResponseWriter) Unwrap() http.ResponseWriter {
+	return w.wrapped
+}
+
+// used for single numeric counter metrics (e.g. total requests received)
+func getOrCreateExpvarInt(name string) *expvar.Int {
+	metric := expvar.Get(name)
+	if metric != nil {
+		if counter, ok := metric.(*expvar.Int); ok {
+			return counter
+		}
+	}
+	return expvar.NewInt(name)
+}
+
+// used for map-based metrics (e.g. total responses sent by status code)
+func getOrCreateExpvarMap(name string) *expvar.Map {
+	metric := expvar.Get(name)
+	if metric != nil {
+		if counterMap, ok := metric.(*expvar.Map); ok {
+			return counterMap
+		}
+	}
+	return expvar.NewMap(name)
+}
+
+// tracks the total number of requests received, total responses sent,
+// total processing time, and total responses sent by status code
+func (a *applicationDependencies) metrics(next http.Handler) http.Handler {
+	totalRequestsReceived := getOrCreateExpvarInt("total_requests_received")
+	totalResponsesSent := getOrCreateExpvarInt("total_responses_sent")
+	totalProcessingTimeMicroseconds := getOrCreateExpvarInt("total_processing_time_μs")
+	totalResponsesSentByStatus := getOrCreateExpvarMap("total_responses_sent_by_status")
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		totalRequestsReceived.Add(1)
+
+		mw := newMetricsResponseWriter(w)
+		next.ServeHTTP(mw, r)
+
+		totalResponsesSent.Add(1)
+		processingTimeMicroseconds := time.Since(start).Microseconds()
+		totalProcessingTimeMicroseconds.Add(processingTimeMicroseconds)
+		totalResponsesSentByStatus.Add(strconv.Itoa(mw.statusCode), 1)
+	})
+}
 
 // recovers from any panics and sends a 500 Internal Server Error response
 func (a *applicationDependencies) recoverPanic(next http.Handler) http.Handler {

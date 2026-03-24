@@ -1,24 +1,24 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func (a *applicationDependencies) routes() http.Handler {
-
-	// setup a new router
 	router := httprouter.New()
 
-	// handle 404
+	// Handle 404 and 405 errors with our custom responses
 	router.NotFound = http.HandlerFunc(a.notFoundResponse)
-
-	// handle 405
 	router.MethodNotAllowed = http.HandlerFunc(a.methodNotAllowedResponse)
 
-	// setup routes
+	// Healtcheck Route
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", a.healthcheckHandler)
+
+	// Metrics Route
+	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
 
 	// Demo route for graceful shutdown
 	router.HandlerFunc(http.MethodGet, "/v1/slow", a.slowPatientHandler)
@@ -84,7 +84,7 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/appointments/:id/cancellations", a.createAppointmentCancellationHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/appointments/:id/cancellations", a.showAppointmentCancellationHandler)
 
-	// Request sent first to recoverPanic() then sent to loggingMiddleware()
-	// then sent to rateLimit() and finally sent to the router
-	return a.recoverPanic(a.loggingMiddleware(a.rateLimit(router)))
+	// Request sent first to loggingMiddleware() then sent to metrics()
+	// then sent to recoverPanic(), rateLimit(), and finally to the router
+	return a.loggingMiddleware(a.metrics(a.recoverPanic(a.rateLimit(router))))
 }
