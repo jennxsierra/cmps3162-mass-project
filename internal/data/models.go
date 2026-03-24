@@ -10,6 +10,7 @@ type Models struct {
 	Provider           ProviderModel
 	Staff              StaffModel
 	ProviderSpecialty  ProviderSpecialtyModel
+	PersonContact      PersonContactModel
 	AppointmentType    AppointmentTypeModel
 	Specialty          SpecialtyModel
 	ContactType        ContactTypeModel
@@ -22,6 +23,7 @@ func NewModels(db *sql.DB) Models {
 		Patient:            PatientModel{DB: db},
 		Provider:           ProviderModel{DB: db},
 		ProviderSpecialty:  ProviderSpecialtyModel{DB: db},
+		PersonContact:      PersonContactModel{DB: db},
 		Staff:              StaffModel{DB: db},
 		AppointmentType:    AppointmentTypeModel{DB: db},
 		Specialty:          SpecialtyModel{DB: db},

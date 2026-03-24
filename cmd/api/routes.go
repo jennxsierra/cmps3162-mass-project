@@ -70,6 +70,12 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/cancellation-reasons", a.listCancellationReasonsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/cancellation-reasons/:id", a.showCancellationReasonHandler)
 
+	// Person Contacts routes
+	router.HandlerFunc(http.MethodPost, "/v1/persons/:id/contacts", a.createPersonContactHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/persons/:id/contacts", a.listPersonContactsHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/persons/:id/contacts/:contact_id", a.updatePersonContactHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/persons/:id/contacts/:contact_id", a.deletePersonContactHandler)
+
 	// Request sent first to recoverPanic() then sent to loggingMiddleware()
 	// then sent to rateLimit() and finally sent to the router
 	return a.recoverPanic(a.loggingMiddleware(a.rateLimit(router)))
