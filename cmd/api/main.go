@@ -23,6 +23,9 @@ type serverConfig struct {
 	db          struct {
 		dsn string
 	}
+	shutdown struct {
+		timeout time.Duration
+	}
 	limiter struct {
 		rps     float64 // requests per second
 		burst   int     // initial requests possible
@@ -46,6 +49,8 @@ func main() {
 	flag.IntVar(&settings.port, "port", 4000, "Server port")
 	flag.StringVar(&settings.environment, "env", "development",
 		"Environment(development|staging|production)")
+	flag.DurationVar(&settings.shutdown.timeout, "shutdown-timeout", 30*time.Second,
+		"Graceful shutdown timeout")
 
 	// Database Flags
 	flag.StringVar(&settings.db.dsn, "db-dsn", "", "PostgreSQL DSN")

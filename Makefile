@@ -11,6 +11,7 @@ run/api:
 	go run ./cmd/api \
 		-db-dsn='$(MEDICAL_DB_DSN)' \
 		-port=${PORT} \
+		-shutdown-timeout=${SHUTDOWN_TIMEOUT} \
 		-limiter-rps=${RATE_LIMITER_RPS} \
 		-limiter-burst=${RATE_LIMITER_BURST} \
 		-limiter-enabled=${RATE_LIMITER_ENABLED} \
@@ -22,6 +23,7 @@ run/api-no-limit:
 	go run ./cmd/api \
 		-db-dsn='$(MEDICAL_DB_DSN)' \
 		-port=${PORT} \
+		-shutdown-timeout=${SHUTDOWN_TIMEOUT} \
 		-limiter-enabled=false \
 		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 

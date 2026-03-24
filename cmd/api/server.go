@@ -36,10 +36,15 @@ func (a *applicationDependencies) serve() error {
 		fmt.Println()
 
 		// message about shutdown in process
-		a.logger.Info("shutting down server", "signal", s.String())
+		shutdownTimeout := a.config.shutdown.timeout
+		if shutdownTimeout <= 0 {
+			shutdownTimeout = 30 * time.Second
+		}
+
+		a.logger.Info("shutting down server", "signal", s.String(), "timeout", shutdownTimeout.String())
 
 		// create a context
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
 		// initiate the shutdown,
