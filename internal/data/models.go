@@ -11,6 +11,7 @@ type Models struct {
 	Staff                   StaffModel
 	User                    UserModel
 	Token                   TokenModel
+	Permission              PermissionModel
 	ProviderSpecialty       ProviderSpecialtyModel
 	PersonContact           PersonContactModel
 	Appointment             AppointmentModel
@@ -28,6 +29,7 @@ func NewModels(db *sql.DB) Models {
 		Provider:                ProviderModel{DB: db},
 		User:                    UserModel{DB: db},
 		Token:                   TokenModel{DB: db},
+		Permission:              PermissionModel{DB: db},
 		ProviderSpecialty:       ProviderSpecialtyModel{DB: db},
 		PersonContact:           PersonContactModel{DB: db},
 		Appointment:             AppointmentModel{DB: db},
