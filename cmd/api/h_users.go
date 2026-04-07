@@ -54,6 +54,13 @@ func (a *applicationDependencies) registerUserHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	// Assign default patient permissions: read-only appointment access.
+	err = a.models.Permission.AddForUser(user.ID, "appointments:read")
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// generate a new activation token for the user that expires in 3 days
 	token, err := a.models.Token.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
 	if err != nil {
