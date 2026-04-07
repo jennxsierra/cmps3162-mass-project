@@ -230,6 +230,28 @@ func (a *applicationDependencies) requireActivatedUser(next http.HandlerFunc) ht
 	return a.requireAuthenticatedUser(fn)
 }
 
+// checks if the user has the necessary permissions before allowing access to certain routes
+func (a *applicationDependencies) requirePermission(permissionCode string, next http.HandlerFunc) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		user := a.contextGetUser(r)
+
+		permissions, err := a.models.Permission.GetAllForUser(user.ID)
+		if err != nil {
+			a.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !permissions.Include(permissionCode) {
+			a.notPermittedResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+
+	return a.requireActivatedUser(fn)
+}
+
 // recovers from any panics and sends a 500 Internal Server Error response
 func (a *applicationDependencies) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
