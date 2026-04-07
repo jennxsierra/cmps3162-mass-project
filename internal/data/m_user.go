@@ -22,6 +22,14 @@ type User struct {
 	Version   int       `json:"-"`
 }
 
+
+// Sentinel value to represent an anonymous user (not authenticated)
+var AnonymousUser = &User{}
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
+}
+
 // define the password type: plaintext and hash
 // lowercase to keep it from being exported and made public
 type password struct {

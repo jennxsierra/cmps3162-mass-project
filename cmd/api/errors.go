@@ -103,3 +103,10 @@ func (a *applicationDependencies) invalidCredentialsResponse(w http.ResponseWrit
 	message := "invalid authentication credentials"
 	a.errorResponseJSON(w, r, http.StatusUnauthorized, message)
 }
+
+// send an error response if the client provides invalid or missing authentication token (401 - Unauthorized)
+func (a *applicationDependencies) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+	message := "invalid or missing authentication token"
+	a.errorResponseJSON(w, r, http.StatusUnauthorized, message)
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"errors"
 	"expvar"
 	"fmt"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jennxsierra/mass-project/internal/data"
 	"golang.org/x/time/rate"
 )
 
@@ -151,6 +153,51 @@ func (a *applicationDependencies) enableCORS(next http.Handler) http.Handler {
 			}
 		}
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+// checks for a valid authentication token in the Authorization header of incoming requests
+func (a *applicationDependencies) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// indicate that the response may vary based on the value of the Authorization header
+		w.Header().Add("Vary", "Authorization")
+
+		// get the value of the Authorization header from the incoming request
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" { // set anonymous user if no auth header provided
+			r = a.contextSetUser(r, data.AnonymousUser)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// check if the authHeader is in the correct format
+		parts := strings.Fields(authHeader)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			a.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		tokenPlaintext := parts[1]
+		if tokenPlaintext == "" {
+			a.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		// retrieve the user associated with the token from the database
+		user, err := a.models.User.GetForToken(data.ScopeAuthentication, tokenPlaintext)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				a.invalidAuthenticationTokenResponse(w, r)
+			default:
+				a.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		// set the user in the request context and call the next handler
+		r = a.contextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
 }

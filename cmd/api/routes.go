@@ -89,5 +89,5 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/appointments/:id/cancellations", a.createAppointmentCancellationHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/appointments/:id/cancellations", a.showAppointmentCancellationHandler)
 
-	return a.loggingMiddleware(a.metrics(a.recoverPanic(a.enableCORS(a.rateLimit(a.gzip(router))))))
+	return a.loggingMiddleware(a.metrics(a.recoverPanic(a.enableCORS(a.rateLimit(a.gzip(a.authenticate(router)))))))
 }
