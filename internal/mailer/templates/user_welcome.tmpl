@@ -1,0 +1,36 @@
+{{define "subject"}}Welcome to the Medical Appointment Scheduling System{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+Thanks for registering for the Medical Appointment Scheduling System.
+
+For future reference, your user ID number is {{.userID}}.
+
+Please send a request to the PUT /v1/users/activated endpoint with this JSON body:
+{"token": "{{.activationToken}}"}
+
+This activation token is single-use and expires in 3 days.
+
+Thanks,
+Medical Appointment Scheduling Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+  <p>Hi,</p>
+  <p>Thanks for registering for the Medical Appointment Scheduling System.</p>
+  <p>Your user ID number is {{.userID}}.</p>
+  <p>Please send a request to <code>PUT /v1/users/activated</code> with the following JSON body:</p>
+  <pre><code>{"token": "{{.activationToken}}"}</code></pre>
+  <p>This activation token is single-use and expires in 3 days.</p>
+  <p>Thanks,<br>Medical Appointment Scheduling Team</p>
+</body>
+</html>
+{{end}}
