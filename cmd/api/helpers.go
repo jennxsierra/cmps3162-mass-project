@@ -176,3 +176,22 @@ func (a *applicationDependencies) readIntIDParam(r *http.Request, paramName stri
 
 	return id, nil
 }
+
+// background accepts a function and runs it in the background as a goroutine
+// it also recovers from any panic and logs the error message
+func (a *applicationDependencies) background(fn func()) {
+	a.wg.Add(1)
+
+	go func() {
+		defer a.wg.Done()
+
+		defer func() {
+			err := recover()
+			if err != nil {
+				a.logger.Error(fmt.Sprintf("%v", err))
+			}
+		}()
+
+		fn()
+	}()
+}
