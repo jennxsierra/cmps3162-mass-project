@@ -97,3 +97,9 @@ func (a *applicationDependencies) editConflictResponse(w http.ResponseWriter, r 
 	message := "unable to update the record due to an edit conflict, please try again"
 	a.errorResponseJSON(w, r, http.StatusConflict, message)
 }
+
+// send an error response if the client provides invalid authentication credentials (401 - Unauthorized)
+func (a *applicationDependencies) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
+	message := "invalid authentication credentials"
+	a.errorResponseJSON(w, r, http.StatusUnauthorized, message)
+}
