@@ -11,7 +11,6 @@ import (
 	"github.com/lib/pq"
 )
 
-var ErrRecordNotFound = errors.New("record not found")
 var ErrPatientInUse = errors.New("patient has related records and cannot be deleted")
 
 type Patient struct {

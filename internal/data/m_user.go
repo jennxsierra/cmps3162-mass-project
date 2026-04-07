@@ -1,10 +1,13 @@
 package data
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"time"
 
 	"github.com/jennxsierra/mass-project/internal/validator"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -84,4 +87,111 @@ func ValidateUser(v *validator.Validator, user *User) {
 	if user.Password.hash == nil {
 		panic("missing password hash for user")
 	}
+}
+
+type UserModel struct {
+	DB *sql.DB
+}
+
+func (u UserModel) Insert(user *User) error {
+	query := `
+		INSERT INTO users (username, email, password_hash, activated)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, version
+	`
+
+	args := []any{user.Username, user.Email, user.Password.hash, user.Activated}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
+	if err != nil {
+		if isDuplicateEmailError(err) {
+			return ErrDuplicateEmail
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (u UserModel) GetByEmail(email string) (*User, error) {
+	query := `
+		SELECT id, created_at, username, email, password_hash, activated, version
+		FROM users
+		WHERE email = $1
+	`
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Username,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (u UserModel) Update(user *User) error {
+	query := `
+		UPDATE users
+		SET username = $1, email = $2, password_hash = $3,
+			activated = $4, version = version + 1
+		WHERE id = $5 AND version = $6
+		RETURNING version
+	`
+
+	args := []any{
+		user.Username,
+		user.Email,
+		user.Password.hash,
+		user.Activated,
+		user.ID,
+		user.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	if err != nil {
+		if isDuplicateEmailError(err) {
+			return ErrDuplicateEmail
+		}
+
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func isDuplicateEmailError(err error) bool {
+	var pqErr *pq.Error
+	if !errors.As(err, &pqErr) {
+		return false
+	}
+
+	return pqErr.Code == "23505" && pqErr.Constraint == "users_email_key"
 }
