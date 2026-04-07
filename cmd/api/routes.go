@@ -52,6 +52,7 @@ func (a *applicationDependencies) routes() http.Handler {
 
 	// User routes
 	router.HandlerFunc(http.MethodPost, "/v1/users", a.registerUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activated", a.activateUserHandler)
 
 	// Appointment Type routes
 	router.HandlerFunc(http.MethodGet, "/v1/appointment-types", a.listAppointmentTypesHandler)

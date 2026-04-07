@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"time"
@@ -89,10 +90,12 @@ func ValidateUser(v *validator.Validator, user *User) {
 	}
 }
 
+// UserModel provides methods for managing users in the database
 type UserModel struct {
 	DB *sql.DB
 }
 
+// Insert adds a new user to the database and returns any error encountered
 func (u UserModel) Insert(user *User) error {
 	query := `
 		INSERT INTO users (username, email, password_hash, activated)
@@ -116,6 +119,7 @@ func (u UserModel) Insert(user *User) error {
 	return nil
 }
 
+// GetByEmail retrieves a user from the database based on their email address
 func (u UserModel) GetByEmail(email string) (*User, error) {
 	query := `
 		SELECT id, created_at, username, email, password_hash, activated, version
@@ -149,6 +153,49 @@ func (u UserModel) GetByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
+// GetForToken veriifies a token to a user and returns the user associated with the token if it's valid
+func (u UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+
+	query := `
+		SELECT users.id, users.created_at, users.username,
+			users.email, users.password_hash, users.activated, users.version
+		FROM users
+		INNER JOIN tokens ON users.id = tokens.user_id
+		WHERE tokens.hash = $1
+			AND tokens.scope = $2
+			AND tokens.expiry > $3
+	`
+
+	args := []any{tokenHash[:], tokenScope, time.Now()}
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Username,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+// Update modifies an existing user in the database and returns any error encountered
 func (u UserModel) Update(user *User) error {
 	query := `
 		UPDATE users
@@ -187,6 +234,7 @@ func (u UserModel) Update(user *User) error {
 	return nil
 }
 
+// isDuplicateEmailError checks if a duplicate email error occurs
 func isDuplicateEmailError(err error) bool {
 	var pqErr *pq.Error
 	if !errors.As(err, &pqErr) {

@@ -91,3 +91,9 @@ func (a *applicationDependencies) rateLimitExceededResponse(
 	w.Header().Set("Retry-After", strconv.Itoa(seconds))
 	a.errorResponseJSON(w, r, http.StatusTooManyRequests, "rate limit exceeded")
 }
+
+// send an error response if there is an edit conflict (409 - Conflict)
+func (a *applicationDependencies) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+	message := "unable to update the record due to an edit conflict, please try again"
+	a.errorResponseJSON(w, r, http.StatusConflict, message)
+}

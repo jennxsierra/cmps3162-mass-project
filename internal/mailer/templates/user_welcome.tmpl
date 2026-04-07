@@ -5,7 +5,14 @@ Hello {{.Username}},
 
 Thank you for registering with the Medical Appointment Scheduling System! We're excited to have you on board.
 
-For future reference, your user ID number is {{.ID}} and your account email is {{.Email}}.
+For future reference, your user ID number is {{.userID}} and your account email is {{.Email}}.
+Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON body to activate your account:
+
+{
+  "token": "{{.activationToken}}"
+}
+
+Please note that this is a one-time use token and will expire in 3 days.
 
 Thanks,
 MASS Team
@@ -21,7 +28,13 @@ MASS Team
 <body>
   <p>Hello {{.Username}},</p>
   <p>Thank you for registering with the Medical Appointment Scheduling System! We're excited to have you on board.</p>
-  <p>For future reference, your user ID number is {{.ID}} and your account email is {{.Email}}.</p>
+  <p>For future reference, your user ID number is {{.userID}} and your account email is {{.Email}}.</p>
+  <p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the following JSON body to activate your account:</p>
+  <pre><code>{
+  "token": "{{.activationToken}}"
+  }</code></pre>
+  <p>Please note that this is a one-time use token and will expire in 3 days.</p>
+  
   <p>Thanks,<br>MASS Team</p>
 </body>
 </html>
