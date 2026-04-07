@@ -110,3 +110,15 @@ func (a *applicationDependencies) invalidAuthenticationTokenResponse(w http.Resp
 	message := "invalid or missing authentication token"
 	a.errorResponseJSON(w, r, http.StatusUnauthorized, message)
 }
+
+// send an error response if the client tries to access a protected resource without authentication (401 - Unauthorized)
+func (a *applicationDependencies) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
+	message := "you must be authenticated to access this resource"
+	a.errorResponseJSON(w, r, http.StatusUnauthorized, message)
+}
+
+// send an error response if the client tries to access a protected resource with an inactive account (403 - Forbidden)
+func (a *applicationDependencies) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
+	message := "your user account must be activated to access this resource"
+	a.errorResponseJSON(w, r, http.StatusForbidden, message)
+}

@@ -202,6 +202,34 @@ func (a *applicationDependencies) authenticate(next http.Handler) http.Handler {
 	})
 }
 
+// checks if the user is authenticated before allowing access to certain routes
+func (a *applicationDependencies) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := a.contextGetUser(r)
+		if user.IsAnonymous() {
+			a.authenticationRequiredResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// checks if the user has an activated account before allowing access to certain routes
+func (a *applicationDependencies) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := a.contextGetUser(r)
+		if !user.Activated {
+			a.inactiveAccountResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
+	return a.requireAuthenticatedUser(fn)
+}
+
 // recovers from any panics and sends a 500 Internal Server Error response
 func (a *applicationDependencies) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
