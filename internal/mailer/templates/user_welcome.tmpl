@@ -1,19 +1,14 @@
-{{define "subject"}}Welcome to the Medical Appointment Scheduling System{{end}}
+{{define "subject"}}Welcome to MASS!{{end}}
 
 {{define "plainBody"}}
-Hi,
+Hello {{.Username}},
 
-Thanks for registering for the Medical Appointment Scheduling System.
+Thank you for registering with the Medical Appointment Scheduling System! We're excited to have you on board.
 
-For future reference, your user ID number is {{.userID}}.
-
-Please send a request to the PUT /v1/users/activated endpoint with this JSON body:
-{"token": "{{.activationToken}}"}
-
-This activation token is single-use and expires in 3 days.
+For future reference, your user ID number is {{.ID}} and your account email is {{.Email}}.
 
 Thanks,
-Medical Appointment Scheduling Team
+MASS Team
 {{end}}
 
 {{define "htmlBody"}}
@@ -24,13 +19,10 @@ Medical Appointment Scheduling Team
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-  <p>Hi,</p>
-  <p>Thanks for registering for the Medical Appointment Scheduling System.</p>
-  <p>Your user ID number is {{.userID}}.</p>
-  <p>Please send a request to <code>PUT /v1/users/activated</code> with the following JSON body:</p>
-  <pre><code>{"token": "{{.activationToken}}"}</code></pre>
-  <p>This activation token is single-use and expires in 3 days.</p>
-  <p>Thanks,<br>Medical Appointment Scheduling Team</p>
+  <p>Hello {{.Username}},</p>
+  <p>Thank you for registering with the Medical Appointment Scheduling System! We're excited to have you on board.</p>
+  <p>For future reference, your user ID number is {{.ID}} and your account email is {{.Email}}.</p>
+  <p>Thanks,<br>MASS Team</p>
 </body>
 </html>
 {{end}}
