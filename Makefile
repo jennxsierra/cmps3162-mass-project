@@ -15,6 +15,11 @@ run/api:
 		-limiter-rps=${RATE_LIMITER_RPS} \
 		-limiter-burst=${RATE_LIMITER_BURST} \
 		-limiter-enabled=${RATE_LIMITER_ENABLED} \
+		-smtp-host=${SMTP_HOST} \
+		-smtp-port=${SMTP_PORT} \
+		-smtp-username=${MAILTRAP_SMTP_USERNAME} \
+		-smtp-password=${MAILTRAP_SMTP_PASSWORD} \
+		-smtp-sender=${SMTP_SENDER} \
 		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 
 ## run/api-no-limit: Start the API server without rate limiting
@@ -25,6 +30,11 @@ run/api-no-limit:
 		-port=${PORT} \
 		-shutdown-timeout=${SHUTDOWN_TIMEOUT} \
 		-limiter-enabled=false \
+		-smtp-host=${SMTP_HOST} \
+		-smtp-port=${SMTP_PORT} \
+		-smtp-username=${MAILTRAP_SMTP_USERNAME} \
+		-smtp-password=${MAILTRAP_SMTP_PASSWORD} \
+		-smtp-sender=${SMTP_SENDER} \
 		-cors-trusted-origins='$(CORS_TRUSTED_ORIGINS)'
 
 # ==================================================================================== #

@@ -9,9 +9,11 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jennxsierra/mass-project/internal/data"
+	"github.com/jennxsierra/mass-project/internal/mailer"
 	_ "github.com/lib/pq"
 )
 
@@ -31,6 +33,13 @@ type serverConfig struct {
 		burst   int     // initial requests possible
 		enabled bool    // enable or disable rate limiter
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 	cors struct {
 		trustedOrigins []string
 	}
@@ -40,6 +49,8 @@ type applicationDependencies struct {
 	config serverConfig
 	logger *slog.Logger
 	models data.Models
+	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -62,6 +73,13 @@ func main() {
 		"Rate Limiter maximum burst")
 	flag.BoolVar(&settings.limiter.enabled, "limiter-enabled", true,
 		"Enable rate limiter")
+
+	// SMTP email server flags
+	flag.StringVar(&settings.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&settings.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&settings.smtp.username, "smtp-username", "", "SMTP username")
+	flag.StringVar(&settings.smtp.password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&settings.smtp.sender, "smtp-sender", "Medical Appointment Scheduling System <no-reply@mass.jsierra.com>", "SMTP sender")
 
 	// CORS Trusted Origins Flags
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
@@ -119,6 +137,13 @@ func main() {
 		config: settings,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(
+			settings.smtp.host,
+			settings.smtp.port,
+			settings.smtp.username,
+			settings.smtp.password,
+			settings.smtp.sender,
+		),
 	}
 
 	err = appInstance.serve()
@@ -148,5 +173,4 @@ func openDB(settings serverConfig) (*sql.DB, error) {
 
 	// return the connection pool (sql.DB)
 	return db, nil
-
 }
