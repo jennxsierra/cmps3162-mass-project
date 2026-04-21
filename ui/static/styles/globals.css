@@ -1,0 +1,70 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 16px;
+}
+
+.card {
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.row {
+  display: flex;
+}
+
+.space-between {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+}
+
+label.inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 22px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 6px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 13px;
+}
+
+.error-box {
+  color: #b00020;
+  margin-top: 12px;
+}
+
+.loading-box {
+  margin-top: 12px;
+}

@@ -10,6 +10,8 @@ import (
 func (a *applicationDependencies) routes() http.Handler {
 	router := httprouter.New()
 
+	/**** BACKEND ****/
+
 	// Handle 404 and 405 errors with our custom responses
 	router.NotFound = http.HandlerFunc(a.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(a.methodNotAllowedResponse)
@@ -24,6 +26,8 @@ func (a *applicationDependencies) routes() http.Handler {
 
 	// Demo route for graceful shutdown
 	router.HandlerFunc(http.MethodGet, "/v1/slow", a.slowPatientHandler)
+
+	/****  DB SCHEMA ****/
 
 	// Patient routes
 	router.HandlerFunc(http.MethodGet, "/v1/patients", a.requirePermission("patients:read", a.listPatientsHandler))
@@ -90,6 +94,20 @@ func (a *applicationDependencies) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/appointments/:id", a.requirePermission("appointments:write", a.updateAppointmentHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/appointments/:id/cancellations", a.requirePermission("appointments:write", a.createAppointmentCancellationHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/appointments/:id/cancellations", a.requirePermission("appointments:read", a.showAppointmentCancellationHandler))
+
+	/**** FRONTEND ****/
+
+	router.ServeFiles("/static/*filepath", http.Dir("./ui/static"))
+
+	router.HandlerFunc(http.MethodGet, "/login", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./ui/static/pages/login.html")
+	})
+
+	router.HandlerFunc(http.MethodGet, "/appointments", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./ui/static/pages/appointments.html")
+	})
+
+	/** MIDDLEWARE */
 
 	return a.loggingMiddleware(a.metrics(a.recoverPanic(a.enableCORS(a.rateLimit(a.gzip(a.authenticate(router)))))))
 }
