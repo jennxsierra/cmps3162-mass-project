@@ -302,8 +302,14 @@ func (m AppointmentModel) GetAll(queryParams AppointmentQueryParams, filters Fil
 			a.provider_id,
 			a.created_by,
 			a.appt_type_id,
+			atp.appt_type_name,
+			(pp.first_name || ' ' || pp.last_name) AS patient_name,
+			(prp.first_name || ' ' || prp.last_name) AS provider_name,
 			(ac.appointment_id IS NOT NULL) AS is_cancelled
 		FROM appointment a
+		JOIN appt_type atp ON atp.appt_type_id = a.appt_type_id
+		JOIN person pp ON pp.person_id = a.patient_id
+		JOIN person prp ON prp.person_id = a.provider_id
 		LEFT JOIN appt_cancellation ac ON ac.appointment_id = a.appointment_id
 		WHERE ($1 = 0 OR a.provider_id = $1)
 		  AND ($2 = 0 OR a.patient_id = $2)
@@ -351,6 +357,9 @@ func (m AppointmentModel) GetAll(queryParams AppointmentQueryParams, filters Fil
 			&appointment.ProviderID,
 			&appointment.CreatedBy,
 			&appointment.ApptTypeID,
+			&appointment.ApptTypeName,
+			&appointment.PatientName,
+			&appointment.ProviderName,
 			&appointment.IsCancelled,
 		)
 		if err != nil {

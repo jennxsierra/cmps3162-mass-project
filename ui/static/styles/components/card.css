@@ -1,0 +1,13 @@
+.card {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-sage);
+  padding: 24px;
+  border-radius: var(--border-radius-lg);
+  margin: 24px 0;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}

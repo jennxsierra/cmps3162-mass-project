@@ -1,0 +1,25 @@
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 64px);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 32px;
+}
+
+.login-card h2 {
+  text-align: center;
+  margin-bottom: 32px;
+  font-size: 28px;
+  color: var(--color-green-darker);
+}
+
+.login-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

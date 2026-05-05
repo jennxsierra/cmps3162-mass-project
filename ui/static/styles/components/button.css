@@ -1,0 +1,44 @@
+button {
+  background-color: var(--color-green-muted);
+  color: var(--color-text-light);
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--border-radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover:not(:disabled) {
+  background-color: var(--color-green-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+button:disabled {
+  background-color: var(--color-sage);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Secondary button style */
+button.secondary {
+  background-color: #fafafa;
+  color: var(--color-green-dark);
+  border: 0.15rem solid var(--color-sage);
+}
+
+button.secondary:hover:not(:disabled) {
+  background-color: var(--color-sage);
+  color: var(--color-text-light);
+}

@@ -285,7 +285,7 @@ BEGIN
     ) ON COMMIT DROP;
 
     FOR i IN 1..20 LOOP
-        v_start := TIMESTAMPTZ '2026-04-01 09:00:00+00' + ((i - 1) * INTERVAL '1 day');
+        v_start := TIMESTAMPTZ '2026-05-01 09:00:00-06' + ((i - 1) * INTERVAL '1 day');
         v_end := v_start + INTERVAL '45 minutes';
         v_staff_id := v_staff_ids[((i - 1) % 5) + 1];
 

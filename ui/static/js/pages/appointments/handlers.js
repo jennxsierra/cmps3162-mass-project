@@ -21,21 +21,18 @@ export function setupHandlers() {
 
     const f = state.appointments.filters;
 
-    f.provider_id = document.querySelector("#filter-provider-id").value.trim();
-    f.patient_id = document.querySelector("#filter-patient-id").value.trim();
-    f.appt_type_id = document
-      .querySelector("#filter-appt-type-id")
-      .value.trim();
-
     f.include_cancelled = document.querySelector(
       "#filter-include-cancelled",
     ).checked;
 
-    f.start_from = document.querySelector("#filter-start-from").value.trim();
-    f.start_to = document.querySelector("#filter-start-to").value.trim();
-
     f.page_size = Number(document.querySelector("#filter-page-size").value);
     f.sort = document.querySelector("#filter-sort").value;
+
+    f.provider_id = "";
+    f.patient_id = "";
+    f.appt_type_id = "";
+    f.start_from = "";
+    f.start_to = "";
 
     // reset to page 1 whenever filters change
     f.page = 1;
