@@ -8,7 +8,7 @@
 | Email          | [2021153908@ub.edu.bz](mailto:2021153908@ub.edu.bz)        |
 | Course Name    | Advanced Databases                                         |
 | Course Code    | CMPS3162                                                   |
-| Due Date       | April 7, 2026                                             |
+| Due Date       | May 5, 2026                                                |
 
 ### Deliverables
 
